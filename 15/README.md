@@ -2,44 +2,48 @@
 
 Let's play a number game. We start of by reading a bunch of given numbers and remembering the previous two times they were said. Now, after they were read once, the next number depends on the previous one. If it was spoken for the first time, we speak 0. Otherwise, we speak the difference between the last two times it was spoken. That is all. Our task was to determine the 2020th number spoken. Rather cryptic instructions to read and it took me a few minutes to comprehend what was asked of us, but once that fog had cleared, a solution is rather trivial. First define what we have to remember for each spoken number and a hashmap storing this piece of information:
 
-	struct diff
-	{
-		std::size_t prev = 0, last = 0;
-	};
-	std::unordered_map<int,diff> last_spoken;
+```cpp
+struct diff
+{
+	std::size_t prev = 0, last = 0;
+};
+std::unordered_map<int,diff> last_spoken;
+```
 
 And then simply simulate the process exactly as given: 
 
-	int last = 0;
-	for(std::size_t i=0;i<2020;++i)
+```cpp
+int last = 0;
+for(std::size_t i=0;i<2020;++i)
+{
+	if(i<numbers.size())
 	{
-		if(i<numbers.size())
+		last = numbers[i];
+		last_spoken[numbers[i]] = {i,i};
+	}
+	else
+	{
+		const auto& data = last_spoken[last];
+		const auto dist = data.last-data.prev;
+		last = dist;
+		
+		if(auto it = last_spoken.find(dist); it==std::end(last_spoken))
 		{
-			last = numbers[i];
-			last_spoken[numbers[i]] = {i,i};
+			auto& to_change_data = last_spoken[dist];
+			
+			to_change_data.prev = i;
+			to_change_data.last = i;
 		}
 		else
 		{
-			const auto& data = last_spoken[last];
-			const auto dist = data.last-data.prev;
-			last = dist;
+			auto& to_change_data = last_spoken[dist];
 			
-			if(auto it = last_spoken.find(dist); it==std::end(last_spoken))
-			{
-				auto& to_change_data = last_spoken[dist];
-				
-				to_change_data.prev = i;
-				to_change_data.last = i;
-			}
-			else
-			{
-				auto& to_change_data = last_spoken[dist];
-				
-				to_change_data.prev = to_change_data.last;
-				to_change_data.last = i;
-			}
+			to_change_data.prev = to_change_data.last;
+			to_change_data.last = i;
 		}
 	}
+}
+```
 
 ## Part 2
 
@@ -53,21 +57,25 @@ The first trick I could think of, as it appeared occasionally in problems of thi
 
 As such, all I could do was optimize what I was already doing. The first and most obvious choice is cutting down on unnecessary allocations, by preallocating enough elements into my hashmap:
 
-	last_spoken.reserve(30000000);
+```cpp
+last_spoken.reserve(30000000);
+```
 
 This cut the runtime down to 5 seconds, which is quite a decent improvement for one line. Switching from a hashmap to a simple vector of 30000000 elements brought another similar improvement, getting the time down to just 2 seconds, switching the type saved from a wasteful std::size_t to int reduced it to 1.5 seconds. In the process, I also made my code look significantly more compact and beautiful than the horrid mess I showed you for part 1:
 
-	for(;i<30000000;++i)
-	{
-		const auto& data = last_spoken[last];
-		const auto dist = data.last-data.prev;
-		last = dist;
+```cpp
+for(;i<30000000;++i)
+{
+	const auto& data = last_spoken[last];
+	const auto dist = data.last-data.prev;
+	last = dist;
+	
+	auto& to_change_data = last_spoken[dist];
 		
-		auto& to_change_data = last_spoken[dist];
-			
-		to_change_data.prev = to_change_data.seen?to_change_data.last:i;
-		to_change_data.last = i;
-		to_change_data.seen = true;
-	}
+	to_change_data.prev = to_change_data.seen?to_change_data.last:i;
+	to_change_data.last = i;
+	to_change_data.seen = true;
+}
+```
 
 Hacking around a tiny bit more to get a more compact memory layout by stealing a bit from "last" instead of having a separate variable for "seen" got the time down to about 1 second, at which point I stopped bothering.

@@ -4,65 +4,70 @@ Expression parsing and evaluation! Great thing I have written some very simple t
 
 First, we define how to parse a single operation:
 
-	operation parse_operation(std::istream& expression)
-	{
-		expression>>std::ws;
-		
-		operation op;
-		if(expression.peek()=='*')
-			op=operation::multiply;
-		else
-			op=operation::add;
+```cpp
+operation parse_operation(std::istream& expression)
+{
+	expression>>std::ws;
 	
-		expression.get();
-			
-		return op;
-	}
+	operation op;
+	if(expression.peek()=='*')
+		op=operation::multiply;
+	else
+		op=operation::add;
+
+	expression.get();
+		
+	return op;
+}
+```
 
 Skip all whitespace and return operation::add or operation::multiply depending on the character seen(We should only support addition and multiplication). Nothing fancy so far. Parsing an operand, however, already contains most of the logic:
 
-	long long parse_operand(std::istream& expression)
-	{
-		expression>>std::ws;
-		
-		long long value = 0;
-		if(expression.peek()=='(')
-		{
-			expression.get();
-			value = evaluate(expression);
-		}
-		else
-			expression>>value;
+```cpp
+long long parse_operand(std::istream& expression)
+{
+	expression>>std::ws;
 	
-		return value;
-	}	
+	long long value = 0;
+	if(expression.peek()=='(')
+	{
+		expression.get();
+		value = evaluate(expression);
+	}
+	else
+		expression>>value;
+
+	return value;
+}	
+```
 
 If the operand is a simple number, we read and return it. Otherwise, we first recursively evaluate the subexpression describing it and then return its result. Evaluation itself can now be described in terms of the two functions above:
 	
-	long long evaluate(std::istream& expression)
+```cpp
+long long evaluate(std::istream& expression)
+{
+	long long result = parse_operand(expression);
+	
+	do
 	{
-		long long result = parse_operand(expression);
+		operation op = parse_operation(expression);
 		
-		do
-		{
-			operation op = parse_operation(expression);
+		long long rhs = parse_operand(expression);
 			
-			long long rhs = parse_operand(expression);
-				
-			result = op==operation::add?(result+rhs):(result*rhs);
-	
-			expression>>std::ws;
-			if(expression.peek()==')')
-			{
-				expression.get();
-				break;
-			}
+		result = op==operation::add?(result+rhs):(result*rhs);
+
+		expression>>std::ws;
+		if(expression.peek()==')')
+		{
+			expression.get();
+			break;
 		}
-		while(expression);
-		
-		return result;
 	}
+	while(expression);
 	
+	return result;
+}
+```	
 
 We first parse the left operand, followed by the operation and its right operand. Our result gets computed as the result of applying the operator to it and the right operand. While there are still more operations to process, we repeat the procedure with result as the new left operand.  
 
@@ -94,35 +99,35 @@ With our example:
 
 and so on. At the very end, we return the running product multiplied by the last sum. Here it is in code:
 
-	long long evaluate(std::istream& expression)
-	{	
-		long long lhs = parse_operand(expression);
+```cpp
+long long evaluate(std::istream& expression)
+{	
+	long long lhs = parse_operand(expression);
+	
+	long long product = 1;
+	do
+	{
+		operation op = parse_operation(expression);
 		
-		long long product = 1;
-		do
-		{
-			operation op = parse_operation(expression);
+		long long rhs = parse_operand(expression);
 			
-			long long rhs = parse_operand(expression);
-				
-			if(op==operation::multiply)
-			{
-				product*=lhs;
-				lhs = rhs;
-			}
-			else
-				lhs+=rhs;
-				
-			expression>>std::ws;
-			if(expression.peek()==')')
-			{
-				expression.get();
-				break;
-			}
+		if(op==operation::multiply)
+		{
+			product*=lhs;
+			lhs = rhs;
 		}
-		while(expression);
-		
-		return product*lhs;
+		else
+			lhs+=rhs;
+			
+		expression>>std::ws;
+		if(expression.peek()==')')
+		{
+			expression.get();
+			break;
+		}
 	}
-
-
+	while(expression);
+	
+	return product*lhs;
+}
+```

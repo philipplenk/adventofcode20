@@ -12,47 +12,48 @@ Or sometimes:
 
 It ought to be trivial, but I am embarrassed to say that this years problems really drove home the point that my skills in the parsing area are severely lacking and I have some serious brushing up to do. Some higher proficiency with regular expressions, for instance, might have tremendously simplified the following abomination I came up with at the time:
 
-	std::istream& operator>>(std::istream& in, rule& r)
-	{
-		r.own_name.clear();
-		r.can_contain_n.clear();
-		
-		std::string str, last;
-		while(in>>str && str!="contain")
-		{
-			r.own_name+=last;
-			last = str+" ";
-		}
-		r.own_name.pop_back();
-		
-		if(!in)
-			return in;
-		
-		do
-		{
-			std::size_t n;
-			std::string name;
-			std::string n_str;
-			in>>n_str;
-			if(n_str=="no")
-			{
-				in>>str>>str>>str;
-				break;
-			}
-			
-			n=std::stoi(n_str);
-			while(in>>str && str.back()!=',' && str.back()!='.')
-			{
-				name+=str+" ";
-			}
-			name.pop_back();
-			r.can_contain_n[name]=n;
-		}
-		while(str.back()!='.');
-		
-		return in;
-	}
+```cpp
+std::istream& operator>>(std::istream& in, rule& r)
+{
+	r.own_name.clear();
+	r.can_contain_n.clear();
 	
+	std::string str, last;
+	while(in>>str && str!="contain")
+	{
+		r.own_name+=last;
+		last = str+" ";
+	}
+	r.own_name.pop_back();
+	
+	if(!in)
+		return in;
+	
+	do
+	{
+		std::size_t n;
+		std::string name;
+		std::string n_str;
+		in>>n_str;
+		if(n_str=="no")
+		{
+			in>>str>>str>>str;
+			break;
+		}
+		
+		n=std::stoi(n_str);
+		while(in>>str && str.back()!=',' && str.back()!='.')
+		{
+			name+=str+" ";
+		}
+		name.pop_back();
+		r.can_contain_n[name]=n;
+	}
+	while(str.back()!='.');
+	
+	return in;
+}
+```	
 
 Don't look at it too closely. Great! Now that we have this, let's return to the root of our problem. Or rather the reverse. Interpreting the "contains" relation as edges in a graph, we can have one node for each bag type and an edge to all other bags in which it might be contained:
 
@@ -74,36 +75,40 @@ would yield the following:
 
 Thanks to the eldritch horror above, such a reversed graph can be constructed easily, representing it as a map from *node-name* to *list-of-children-names*:
 
-	std::unordered_map<std::string,std::vector<std::string>> reverse_graph;
-	rule r;
-	while(std::cin>>r)
-	{
-		for(auto [name,n]:r.can_contain_n)
-			reverse_graph[name].push_back(r.own_name);
-	}
+```cpp
+std::unordered_map<std::string,std::vector<std::string>> reverse_graph;
+rule r;
+while(std::cin>>r)
+{
+	for(auto [name,n]:r.can_contain_n)
+	reverse_graph[name].push_back(r.own_name);
+}
+```
 
 Given that, all we need to do is walk each possible path away from our starting node ("shiny gold") and count the total number of nodes we pass by(remembering which we have already seen and counted on the way):
 
-	std::vector<std::string> left;
-	std::unordered_set<std::string> seen;
-	left.push_back("shiny gold");
+```cpp
+std::vector<std::string> left;
+std::unordered_set<std::string> seen;
+left.push_back("shiny gold");
+
+std::size_t count = 0;
+while(!left.empty())
+{
+	const auto next = left.back();
 	
-	std::size_t count = 0;
-	while(!left.empty())
+	left.pop_back(); 
+	for(const auto& target: reverse_graph[next])
 	{
-		const auto next = left.back();
-		
-		left.pop_back(); 
-		for(const auto& target: reverse_graph[next])
+		if(seen.find(target)==std::end(seen))
 		{
-			if(seen.find(target)==std::end(seen))
-			{
-				seen.insert(target);
-				left.push_back(target);
-				++count;
-			}
+			seen.insert(target);
+			left.push_back(target);
+			++count;
 		}
 	}
+}
+```
 
 ## Part 2
 
@@ -117,21 +122,23 @@ Wonderful! Now for part 2 we were tasked with doing basically the reverse. Inste
 
 Which we will, once again, simply walk recursively from our starting location, multiplying the results by the given quantities: 
 
-	struct edge
-	{
-		std::string target;
-		std::size_t weight;
-	};
-	
-	std::size_t number_of_interior_bags(const std::string& outer_name, const std::unordered_map<std::string,std::vector<edge>>& graph)
-	{
-		std::size_t count = 1;
-		auto it = graph.find(outer_name);
-		if(it==std::end(graph))
-			return count;
-			
-		for(const auto& [name,n]: it->second)
-			count+=n*number_of_interior_bags(name,graph);
-		
+```cpp
+struct edge
+{
+	std::string target;
+	std::size_t weight;
+};
+
+std::size_t number_of_interior_bags(const std::string& outer_name, const std::unordered_map<std::string,std::vector<edge>>& graph)
+{
+	std::size_t count = 1;
+	auto it = graph.find(outer_name);
+	if(it==std::end(graph))
 		return count;
-	}
+		
+	for(const auto& [name,n]: it->second)
+		count+=n*number_of_interior_bags(name,graph);
+	
+	return count;
+}
+```
