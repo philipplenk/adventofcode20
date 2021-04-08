@@ -4,6 +4,7 @@ The first puzzle was simply finding two elements in a list of numbers which sum 
 
 This can, of course, be solved trivially in quadratic time, as can be seen in [01_nested_loop.cpp](01_nested_loop.cpp):
 	
+	```cpp
 	for(std::size_t i=0;i<vals.size();++i)
 	{
 		for(std::size_t j=i+1;j<vals.size();++j)
@@ -14,6 +15,7 @@ This can, of course, be solved trivially in quadratic time, as can be seen in [0
 			}
 		}
 	}
+	```
 
 If we want to [get fancy](01_binary_search.cpp), we can sort our input in O(n log n) time, iterate over it and find the potentially corresponding number in O(log n) time, yielding a total running time of O(n log n) again:
 
