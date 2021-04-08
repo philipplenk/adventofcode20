@@ -1,0 +1,1 @@
+Like the session_key, you have to fetch your own input. Just replace this file with whatever the website throws at you. You can also use my fetch_input.sh script to download, but please, only run it once per puzzle!
