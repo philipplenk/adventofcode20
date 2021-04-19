@@ -65,7 +65,7 @@ class trivial_fixed_ring
 };
 ```
 
-Yeah, as there is none in the standard library[^ring], implementing a small, bad and severely broken ring buffer might be ever so slight overkill, considering the input list is a mere 1000 numbers and the approach above runs in the fraction of a fraction of a fraction of a second, but who am I if not one to always entertain the notion of severely overengineering the most trivial of tasks?
+Yeah, as there is none in the standard library<a title="Unfortunately, we did not get a ring in C++20 either. Can anyone tell me what happend to [p0059?](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0059r4.pdf)"><sup>1</sup></a>, implementing a small, bad and severely broken ring buffer might be ever so slight overkill, considering the input list is a mere 1000 numbers and the approach above runs in the fraction of a fraction of a fraction of a second, but who am I if not one to always entertain the notion of severely overengineering the most trivial of tasks?
 
 Utilizing this data structure, our solution changes to look like this:
 
@@ -97,8 +97,6 @@ while(std::cin>>next)
 
 std::cout<<next;
 ```
-
-[^ring]: Unfortunately, we did not get a ring in C++20 either. Can anyone tell me what happend to [p0059?](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0059r4.pdf)
 
 Our theoretical runtime can be reduced by using the exact same methods employed on day 1: either via sorting or via wasting a potentially huge amount of memory. 
 
